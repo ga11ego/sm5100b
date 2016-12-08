@@ -14,3 +14,4 @@ The library has --theoretically-- four parts:
 
 I wrote "theoretically" because I have written it at the same time I have learned about GSM (I started with no idea about the AT commands, nor SMSs, PDU, etc) and some things have been left aside. For example, the serial part does not exist. I know I have to spend some time reading about serial communication (more specifically, serial set-up) and make it work whatever the USB state is.
 
+I have written this as a hobby. I anybody reads this and finds it useful... oh boy... 
