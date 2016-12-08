@@ -2,7 +2,7 @@
 sm5100B GSM modem written in C
 
 A couple of years ago I wanted to manage some devices (arduinos, computers) using SMSs. So I bought a GSM modem: an SM5100B. My first 
-idea was to use them directly from and Arduino. Unfortunately, I found quite complicated doing complex things with and Arduino due to the limitations it has (memory, language) Most likely the worst part was me, not being able to solve the technical problems I found.
+idea was to use them directly from and Arduino. Unfortunately, I found it quite complicated doing complex things with an Arduino due to the limitations it has (memory, language) Most likely the worst part was me, not being able to solve the technical problems I found.
 
 So I decided to interface it directly with it through the USB port of a computer by using C. And this is what the library is about. It has also been my first experiment with github.
 
