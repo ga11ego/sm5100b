@@ -25,7 +25,8 @@ typedef struct {
 	textsmsnode_t *m_head;
 } textsmslist_t;
 
-void FreeTextSMSNode(textsmsnode_t *);
+void 	FreeTextSMSNode(textsmsnode_t *);
+int 	AddTextSMSNodeEnd(textsms_t*,textsmsnode_t*);
 
 
 
