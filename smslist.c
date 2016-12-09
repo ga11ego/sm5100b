@@ -22,7 +22,11 @@ void InitTextSMSList(textsmslist_t *smslist)
 	smslist->m_head=NULL;
 }
 
-
+/*
+ * FreeTextSMSNode()
+ * Desembre 2016
+ * Frees the node values and all it's childs
+ */
 void FreeTextSMSNode(textsmsnode_t *smsn)
 {
 	if ( !smsn )
@@ -33,6 +37,11 @@ void FreeTextSMSNode(textsmsnode_t *smsn)
 	free(smsn->m_next);
 }
 
+/* 
+ * FreeTextSMSList()
+ * December 2016
+ * Frees all the nodes starting from the head. 
+ */
 void FreeTextSMSList(textsmslist_t *smslist)
 {
 	FreeTextSMSNode(smslist->m_head);
