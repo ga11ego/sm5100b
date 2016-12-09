@@ -7,6 +7,7 @@
 #include "serial.h"
 #include "atstring.h"
 #include "gsm.h"
+#include "smslist.h"
 #include "sms.h"
 
 void SetUSBUp(int fd)
@@ -37,7 +38,7 @@ int main()
 	ssize_t size;
 	int ber,rssi;
 	
-	textsmsnode_t	smslisthead;
+	textsmslist_t	smslist;
 	
 	/* A probar cosas */
 	printf("Opening port... /dev/ttyUSB0\n");
@@ -154,9 +155,9 @@ int main()
 	
 	// Vamos a empezar el baile.
 	printf("Now reading SMS's. Please wait...\n");
-	InitTextSMSList(&smslisthead);
-	GetTextSMSList(fd,&smslisthead);
-	FreeTextSMSList(&smslisthead);
+	InitTextSMSList(&smslist);
+	GetTextSMSList(fd,&smslist);
+	FreeTextSMSList(&smslist);
 	close(fd);
     return 0;
 }
