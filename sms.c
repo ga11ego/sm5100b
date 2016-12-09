@@ -101,55 +101,7 @@ int SetSMSMode(int fd,int mode)
 	return 1;
 }
 
-/* 
- * InitTextSMS();
- * Diciembre 2016
- * Inicializa un txtsms_t
- * Pone los valores a 0. 
- */
-void InitTextSMS(textsms_t *sms)
-{
-	memset(sms,0,sizeof(textsms_t));	// A saco.
-}
 
-/*
- * InitTextSMSList()
- * Diciembre 2016
- * Inicializa la estructura txtsmslist_t a 0. 
- * 
- */
-int InitTextSMSList(textsmsnode_t *node)
-{
-	// Ponemos el sms a 0 pelotero
-	InitTextSMS(&node->m_sms);
-	node->next=NULL;
-}
-
-/*
- * FreeTextSMSList()
- * Diciembre 2016
- * Libera toda la memoria de una lista de SMSs
- */
-void FreeTextSMSList(textsmsnode_t *node)
-{
-	if ( !node )
-		return;
-	FreeTextSMSList(node->next);
-	// Iremos hacia adelante.
-	free(node->next);				// free(NULL) no hace nada ;-)
-}
-
-/* 
- * GetTextSMSListSize()
- * Diciembre 2016
- * Retorna el número de sms's en la lista
- */
-int GetTextSMSListSize(textsmsnode_t *node)
-{
-	if ( !node->next )
-		return 1;
-	return 1+GetTextSMSListSize(node->next);
-}
  
 /* GetTextSMSList()
  * Noviembre 2016
@@ -175,7 +127,7 @@ En modo PDU:
 
 07914356060053F54005A12214F2000061119121927040960324010298A7DBF9B70ED82CABDFF270FB3D07B1C373103D2C4F9BC3F31068761482C46175181406C564AC1AA85C97BFE72C10ED2804A1C2E8B73C0CAA1D85299038AC0E83C2A0D8AD5C97BFE7A03C28063B0A41E2B03A0C0A83663050B92E7FCF412B50DA6D7E83CA6E10BD0E2AB7DAE1341BF40695DD2031FB7D76CDD3EDFCDB559E03
  */
-int GetTextSMSList(int fd, textsmsnode_t *smslist)
+int GetTextSMSList(int fd, textsmslist_t *smslist)
 {
 	res_t 	res;
 	
