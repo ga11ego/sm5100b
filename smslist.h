@@ -8,13 +8,7 @@
 
 #define SMSLIST_INC
 
-typedef struct {
-	int 	m_index;
-	int 	m_type;
-	char	m_stat[16];
-	char	m_telf[32];
-	char 	m_mensaje[1024];
-} textsms_t;
+#include "sms.h"
 
 typedef struct smsnode {
 	textsms_t			*m_sms;
