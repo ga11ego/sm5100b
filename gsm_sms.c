@@ -12,6 +12,7 @@
  
 #include <stdarg.h>
 #include <syslog.h>
+#include <regex.h>
  
  /*
  * GetSMSMode()
@@ -130,7 +131,16 @@ En modo PDU:
  */
 int GetTextSMSList(int fd, textsmslist_t *smslist)
 {
-	res_t 	res;
+	res_t 		res;
+	int			nreslines;
+	regex_t		regex;
+	int			reti;
+	char 		msgbuf[100];
+	char		tmpbuf[MAXATRES];
+	char		line[MAXATRES];
+	int			nl;
+	textsms_t	sms;
+	regmatch_t	matches[12];	//Esperamos 11
 	
 	/* Damos por hecho que la lista viene inicializada. */
 	
@@ -164,8 +174,115 @@ int GetTextSMSList(int fd, textsmslist_t *smslist)
 	}
 	
 	// Ahora viene la gracia de procesar todas las líneas.
-	DumpATOutput(res);
+	//DumpATOutput(res);
 	
+	/* Each SMS starts with +CMGL. We iterate the whole answer looking 
+	 * for this. It ends with an OK.
+	 * We iterate counting lines to make sure we don't get lost 
+	 * and that we can give some sort of feedback if something fails.
+	 */
+	nreslines=count_rest_lines(res);
+	printf("We are going to process %d lines\n",nreslines);
+	// egrep regexp: ^\+CMGL: *([0-9]+),([0-9]+),"([^"]*)","([+0-9]+)","(.*)"
+	reti = regcomp(&regex, "^\\+CMGL: *([0-9]+),([0-9]+),\"([^\"]*)\",\"([+0-9]+)\",\"([0-9]+)/([0-9]+)/([0-9]+),([0-9]+):([0-9]+):([0-9]+)([+-][0-9]+)\"$", REG_EXTENDED);
+	if (reti) 
+	{
+		fprintf(stderr, "Could not compile regex\n");
+		exit(1);
+	}
+
+	for(nl=0;nl<nreslines;nl++)
+	{
+		getline_rest(res,nl,line,MAXATRES);
+		reti = regexec(&regex, line, 12, matches, 0);
+		if (!reti) 
+		{
+			// Tenemos un match. Vamos a por los campos. 
+			
+			int k;
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[1].rm_so;k<matches[1].rm_eo;k++)
+				tmpbuf[k-matches[1].rm_so]=line[k];
+			sms.m_index=atoi(tmpbuf);
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[2].rm_so;k<matches[2].rm_eo;k++)
+				tmpbuf[k-matches[2].rm_so]=line[k];
+			sms.m_type=atoi(tmpbuf);
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[3].rm_so;k<matches[3].rm_eo;k++)
+				tmpbuf[k-matches[3].rm_so]=line[k];
+			if ( strcmp(tmpbuf,SMS_RECREAD_TXT) == 0 )
+				sms.m_stat=SMS_RECREAD;
+			else
+				if ( strcmp(tmpbuf,SMS_RECUNREAD_TXT) == 0 )
+					sms.m_stat=SMS_RECUNREAD;
+				else 
+					if ( strcmp(tmpbuf,SMS_STOSENT_TXT) == 0 )
+						sms.m_stat=SMS_STOSENT;
+					else 
+						if ( strcmp(tmpbuf,SMS_STOUNSENT_TXT) == 0 )
+							sms.m_stat=SMS_STOUNSENT;
+						else
+							if ( strcmp(tmpbuf,SMS_ALL_TXT) == 0 )
+								sms.m_stat=SMS_ALL;
+							else
+								sms.m_stat=SMS_UNKNOWN;
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[4].rm_so;k<matches[4].rm_eo;k++)
+				tmpbuf[k-matches[4].rm_so]=line[k];
+			strncpy(sms.m_telf,tmpbuf,SMS_MAXTELF);
+			
+			struct tm	t;
+			
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[5].rm_so;k<matches[5].rm_eo;k++)
+				tmpbuf[k-matches[5].rm_so]=line[k];
+			t.tm_year=100+atoi(tmpbuf);
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[6].rm_so;k<matches[6].rm_eo;k++)
+				tmpbuf[k-matches[6].rm_so]=line[k];
+			t.tm_mon=atoi(tmpbuf)-1;
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[7].rm_so;k<matches[7].rm_eo;k++)
+				tmpbuf[k-matches[7].rm_so]=line[k];
+			t.tm_mday=atoi(tmpbuf);
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[8].rm_so;k<matches[8].rm_eo;k++)
+				tmpbuf[k-matches[8].rm_so]=line[k];
+			t.tm_hour=atoi(tmpbuf);
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[9].rm_so;k<matches[9].rm_eo;k++)
+				tmpbuf[k-matches[9].rm_so]=line[k];
+			t.tm_min=atoi(tmpbuf);
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[10].rm_so;k<matches[10].rm_eo;k++)
+				tmpbuf[k-matches[10].rm_so]=line[k];
+			t.tm_sec=atoi(tmpbuf);
+			t.tm_isdst=-1;
+			sms.m_date=mktime(&t);
+			
+			// Only the message is missing.
+			nl++;
+			getline_rest(res,nl,line,MAXATRES);
+			strncpy(sms.m_mensaje,line,SMS_MAXSMSTXT);
+			
+			DumpSMS(stdout,sms);
+			//memset(tmpbuf,'\0',MAXATRES);
+			//for(k=matches[11].rm_so;k<matches[11].rm_eo;k++)
+			//	tmpbuf[k-matches[11].rm_so]=line[k];
+			//printf("Offset: [%s] %d\n",tmpbuf,atoi(tmpbuf));
+		} else 
+			if (reti == REG_NOMATCH) 
+			{
+			} else 
+			{
+				regerror(reti, &regex, msgbuf, sizeof(msgbuf));
+				fprintf(stderr, "Regex match failed: %s\n", msgbuf);
+				exit(1);
+			}
+	}
+	
+	regfree(&regex);
 	
 	free_rest(&res);
 	return 1;
