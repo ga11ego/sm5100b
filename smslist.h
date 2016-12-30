@@ -21,7 +21,7 @@ typedef struct {
 
 void 	FreeTextSMSNode(textsmsnode_t *);
 int 	AddTextSMSNodeEnd(textsms_t*,textsmsnode_t*);
-
+void 	DumpTExtSMSNodeList(FILE *,textsmsnode_t*);
 
 
 void 	InitTextSMSList(textsmslist_t *);
@@ -30,7 +30,7 @@ void 	FreeTextSMSList(textsmslist_t *);
 int AddTextSMSEnd(textsms_t,textsmslist_t*);
 int CountTextSMS(textsmslist_t);
 int GetTextSMS(textsms_t *,textsmslist_t,int);
-void DumpTextSMSList(textsmslist_t);
+void DumpTextSMSList(FILE*,textsmslist_t);
 
 
 

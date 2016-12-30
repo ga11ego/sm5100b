@@ -41,6 +41,6 @@ typedef struct {
 } textsms_t;
 
 void DumpSMS(FILE *,textsms_t);
-void PrintStat(FILE *,int);
+void GetStatTxt(int,char*);
 
 #endif

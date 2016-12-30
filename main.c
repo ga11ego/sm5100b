@@ -157,6 +157,7 @@ int main()
 	printf("Now reading SMS's. Please wait...\n");
 	InitTextSMSList(&smslist);
 	GetTextSMSList(fd,&smslist);
+	DumpTextSMSList(stdout,smslist);
 	FreeTextSMSList(&smslist);
 	close(fd);
     return 0;

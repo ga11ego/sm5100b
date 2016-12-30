@@ -109,3 +109,23 @@ int AddTextSMSEnd(textsms_t sms, textsmslist_t *list)
 		}
 	}
 }
+
+void DumpTextSMSNodeList(FILE *f,textsmsnode_t *node)
+{
+	if ( node )
+	{
+		DumpSMS(f, *node->m_sms);
+		DumpTextSMSNodeList(f,node->m_next);
+	}
+}
+
+/*
+ * DumpTextSMSList()
+ * December 2016
+ * Dumps the list to the FILE descriptor
+ */
+void DumpTextSMSList(FILE *f,textsmslist_t list)
+{
+	if (list.m_head)
+		DumpTextSMSNodeList(f,list.m_head);
+}

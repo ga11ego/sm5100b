@@ -266,11 +266,16 @@ int GetTextSMSList(int fd, textsmslist_t *smslist)
 			getline_rest(res,nl,line,MAXATRES);
 			strncpy(sms.m_mensaje,line,SMS_MAXSMSTXT);
 			
-			DumpSMS(stdout,sms);
-			//memset(tmpbuf,'\0',MAXATRES);
-			//for(k=matches[11].rm_so;k<matches[11].rm_eo;k++)
-			//	tmpbuf[k-matches[11].rm_so]=line[k];
-			//printf("Offset: [%s] %d\n",tmpbuf,atoi(tmpbuf));
+			/* So we have the SMS in the sms structure.
+			 * Now we add it to the list.
+			 */
+			if ( !AddTextSMSEnd(sms,smslist) )
+			{
+				fprintf(stderr,"GetTextSMSList():: Error adding SMS to list\n");
+				regfree(&regex);
+				free_rest(&res);
+				return 0;
+			}
 		} else 
 			if (reti == REG_NOMATCH) 
 			{
@@ -278,12 +283,12 @@ int GetTextSMSList(int fd, textsmslist_t *smslist)
 			{
 				regerror(reti, &regex, msgbuf, sizeof(msgbuf));
 				fprintf(stderr, "Regex match failed: %s\n", msgbuf);
-				exit(1);
+				regfree(&regex);
+				free_rest(&res);
+				return 0;
 			}
 	}
-	
 	regfree(&regex);
-	
 	free_rest(&res);
 	return 1;
 }
