@@ -37,13 +37,32 @@ void GetStatTxt(int st, char *dest)
 	}
 }
 
+int GetStatInt(const char *tmpbuf)
+{
+	if ( strcmp(tmpbuf,SMS_RECREAD_TXT) == 0 )
+		return SMS_RECREAD;
+	else
+		if ( strcmp(tmpbuf,SMS_RECUNREAD_TXT) == 0 )
+			 return SMS_RECUNREAD;
+		else 
+			if ( strcmp(tmpbuf,SMS_STOSENT_TXT) == 0 )
+				return SMS_STOSENT;
+			else 
+				if ( strcmp(tmpbuf,SMS_STOUNSENT_TXT) == 0 )
+					return SMS_STOUNSENT;
+				else
+					if ( strcmp(tmpbuf,SMS_ALL_TXT) == 0 )
+						return SMS_ALL;
+					else
+						return SMS_UNKNOWN;
+}
 
 /*
  * DumpSMS. 
  * December 2016
  * Prints the SMS content in a readable way
  */
-void DumpSMS(FILE *f,textsms_t sms)
+void DumpTextSMS(FILE *f,textsms_t sms)
 {
 	struct tm	t;
 	char   tmpbuf[120];

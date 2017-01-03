@@ -10,6 +10,7 @@
 #include "atstring.h"
 #include <stdarg.h>
 #include <syslog.h>
+#include <regex.h>
 
 /* 
  * init_rest()
@@ -100,6 +101,13 @@ int count_rest_lines(res_t res)
  * read(). Así que necesitaremos asegurarnos de que todo queda bien.
  * Recuerda que aquí no hacemos procesado de ningún tipo. Solo 
  * leemos líneas y las metemos en el res.
+ * Enero 2017. 
+ * Cuando hay un error, retornamos 1 aunque dé error.
+ * 
+ * Aclaración para los errores: Si retorna 1, es que el comando "ha ido
+ * bien"... es decir, no ha petado. Pero no por ello debe salir un OK 
+ * al final.
+ * 
  * 
  */
 #define MAXATBUFF	2048
@@ -110,6 +118,8 @@ int SendATCommand2(int fd, res_t *res)
 	int		rr;						// read result. 0==EOF. -1=ERRR
 	char	tmpbuff[MAXATBUFF];		// Aquí iremos guardando los caracteres de cada línea. 
 	int		buffptr;				// Puntero dentro del tmpbuff
+	regex_t	regex_error;
+	int 	reti;
 	
 	/* Si el comando viene vacío, es un AT pelao */
 	if ( strlen(res->atcmd)==0 )
@@ -121,6 +131,16 @@ int SendATCommand2(int fd, res_t *res)
 		/* Cagada */
 		return 0;
 	}
+	
+	// Preparamos las regexp.
+	reti = regcomp(&regex_error, "^\\+CM. ERROR:", REG_EXTENDED);
+	if (reti) 
+	{
+		fprintf(stderr, "Could not compile regex\n");
+		return 0;
+	}
+	
+	
 	// Ahora vamos a ire leyendo el output caracter a caracter.
 	memset(tmpbuff,'\0',MAXATBUFF);
 	buffptr=0;
@@ -133,17 +153,26 @@ int SendATCommand2(int fd, res_t *res)
 			{
 				if ( ic=='\n' )		// Fin de linea.
 				{
-			
 					// Tenemos dos cosas por hacer.
 					// 1. Copiar la cadena a res.
 					// 2. Comprobar que no sea un OK pelao. Que siginifica que terminamos.
+					//    O que sea un error +CMS ERROR: errno
 					if ( strlen(tmpbuff)!=0 ) // Si es 0, pasamos de añadirla. 
 					{
 						add_rest_line(res,tmpbuff);
 						// Ahora comprobamos que no es un ok.
 						if ( strcmp(tmpbuff,"OK") == 0 )
 						{
+							regfree(&regex_error);
 							return 1;
+						} else {
+							// Podría ser un +CMS ERROR:
+							reti = regexec(&regex_error, tmpbuff, 0, NULL, 0);
+							if ( !reti )
+							{
+								regfree(&regex_error);
+								return 1;
+							}
 						}
 						// Ponemos a 0 todo.
 						memset(tmpbuff,'\0',MAXATBUFF);
@@ -154,22 +183,27 @@ int SendATCommand2(int fd, res_t *res)
 				}
 			} else {
 				// Muy raro. El read ha dado error. 
-				printf("ERROR: read() returned unexpected value %d\n",rr);
+				fprintf(stderr,"ERROR: read() returned unexpected value %d\n",rr);
+				regfree(&regex_error);
 				return 0;
 			}
 		} else {
 			tmpbuff[buffptr++]=ic;
-			//printf("%c",ic);
 		}		
 	}
 	if ( rr==0 )	// EOF.
+	{
+		regfree(&regex_error);
 		return 1;
+	}
 	if ( rr==-1 )
 	{
-		printf("read() returned -1\n");
+		fprintf(stderr,"read() returned -1\n");
+		regfree(&regex_error);
 		return 0;
 	}
-	printf("Unexpected error\n");
+	fprintf(stderr,"Unexpected error\n");
+	regfree(&regex_error);
 	return 0;
 
 }
@@ -233,12 +267,12 @@ int check_at_response2(res_t res,const char *cmd)
 
 void dl(const char *l)
 {
-	printf("%s\n",l);
+	fprintf(stderr,"%s\n",l);
 }
 void DumpATOutput(res_t res)
 {
-	printf("Command: <%s>\n",res.atcmd);
-	printf("Number of lines: %d\n",count_rest_lines(res));
+	fprintf(stderr,"Command: <%s>\n",res.atcmd);
+	fprintf(stderr,"Number of lines: %d\n",count_rest_lines(res));
 	
 	exec_ll(res.strings,dl);
 }

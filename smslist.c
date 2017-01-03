@@ -114,7 +114,7 @@ void DumpTextSMSNodeList(FILE *f,textsmsnode_t *node)
 {
 	if ( node )
 	{
-		DumpSMS(f, *node->m_sms);
+		DumpTextSMS(f, *node->m_sms);
 		DumpTextSMSNodeList(f,node->m_next);
 	}
 }

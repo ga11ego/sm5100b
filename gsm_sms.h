@@ -14,4 +14,6 @@ int SetSMSMode(int,int);
 
 int GetTextSMSList(int, textsmslist_t *);
  
+int PickTextSMSIndex(int,int,textsms_t *);
+ 
  #endif

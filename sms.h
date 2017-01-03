@@ -40,7 +40,10 @@ typedef struct {
 	char 	m_mensaje[SMS_MAXSMSTXT];
 } textsms_t;
 
-void DumpSMS(FILE *,textsms_t);
-void GetStatTxt(int,char*);
+void 	DumpTextSMS(FILE *,textsms_t);
+void 	GetStatTxt(int,char*);
+int		GetStatInt(const char *);
+
+
 
 #endif
