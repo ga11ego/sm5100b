@@ -27,19 +27,19 @@ int GetSMSMode(int fd)
 	res_t 	res;
 	int		result;
 	char	line0[MAXATRES];
+	int		atret;
 	
 	init_rest(&res);
 	set_rest_cmd(&res,"CMGF?");
-	if ( !SendATCommand2(fd,&res) )
+	if ( atret=SendATCommand2(fd,&res) )
 	{
-		syslog(LOG_LOCAL7,"GetSMSMode: SendAT Failed");
+		fprintf(stderr,"GetSMSMode: SendAT failed with code %d\n",atret);
 		free_rest(&res);
 		return SMSMODE_ERROR;
 	}
 	if ( !is_at_ok(res) )
 	{
-		syslog(LOG_LOCAL7,"CMGF? failed");
-		SyslogATOutput(res);
+		fprintf(stderr,"CMGF? failed\n");
 		free_rest(&res);
 		return SMSMODE_ERROR;
 	}
@@ -48,8 +48,7 @@ int GetSMSMode(int fd)
 		return 0;
 	if ( strlen(line0) != 8 )
 	{
-		syslog(LOG_LOCAL7,"CMGF? failed: Bad format");
-		SyslogATOutput(res);
+		fprintf(stderr,"CMGF?: failed: Bad Format\n");
 		free_rest(&res);
 		return SMSMODE_ERROR;
 	}
@@ -80,21 +79,21 @@ int SetSMSMode(int fd,int mode)
 	res_t 	res;
 	char 	comp[128];
 	int		result;
+	int		atret;
 	
 	init_rest(&res);
 	
 	sprintf(comp,"CMGF=%d",(mode==SMSMODE_PDU)?0:1);
 	set_rest_cmd(&res,comp);
-	if ( !SendATCommand2(fd,&res) )
+	if ( atret=SendATCommand2(fd,&res) )
 	{
-		syslog(LOG_LOCAL7,"SetSMSMode: SendAT Failed");
+		fprintf(stderr,"SetSMSMode: SendAT failed with code %d\n",atret);
 		free_rest(&res);
 		return 0;
 	}
 	if ( !is_at_ok(res) )
 	{
-		syslog(LOG_LOCAL7,"CMGF= failed");
-		SyslogATOutput(res);
+		fprintf(stderr,"CMGF= failed\n");
 		free_rest(&res);
 		return 0;
 	}
@@ -141,13 +140,14 @@ int GetTextSMSList(int fd, textsmslist_t *smslist)
 	int			nl;
 	textsms_t	sms;
 	regmatch_t	matches[12];	//Esperamos 11
+	int			atret;
 	
 	/* Damos por hecho que la lista viene inicializada. */
 	
 	/* Ponemos el modem en modo Texto */
 	if ( !SetSMSMode(fd,SMSMODE_TEXT) )
 	{
-		syslog(LOG_LOCAL7,"GetTextSMSList: SetSMSMode() failed.");
+		fprintf(stderr,"GetTextSMSList: SetSMSMode() failed.\n");
 		FreeTextSMSList(smslist);
 		return 0;
 	} 
@@ -157,9 +157,9 @@ int GetTextSMSList(int fd, textsmslist_t *smslist)
 	
 	/* No podemos usar SendATCommand porque lo que vuelve es larguísimo. */
 	
-	if ( !SendATCommand2(fd,&res) )
+	if ( atret=SendATCommand2(fd,&res) )
 	{
-		syslog(LOG_LOCAL7,"GetTextSMSList:SendAT2 failed");
+		fprintf(stderr,"GetTextSMSList: SendAT2 failed with code %d\n",atret);
 		free_rest(&res);
 		return 0;
 	}
@@ -167,8 +167,7 @@ int GetTextSMSList(int fd, textsmslist_t *smslist)
 	// Al final de todo hay un OK.
 	if ( !is_at_ok(res) )
 	{
-		syslog(LOG_LOCAL7,"CMGL=\"ALL\" failed");
-		SyslogATOutput(res);
+		fprintf(stderr,"CMGL=\"ALL\" failed\n");
 		free_rest(&res);
 		return 0;
 	}
@@ -182,7 +181,6 @@ int GetTextSMSList(int fd, textsmslist_t *smslist)
 	 * and that we can give some sort of feedback if something fails.
 	 */
 	nreslines=count_rest_lines(res);
-	printf("We are going to process %d lines\n",nreslines);
 	// egrep regexp: ^\+CMGL: *([0-9]+),([0-9]+),"([^"]*)","([+0-9]+)","(.*)"
 	reti = regcomp(&regex, "^\\+CMGL: *([0-9]+),([0-9]+),\"([^\"]*)\",\"([+0-9]+)\",\"([0-9]+)/([0-9]+)/([0-9]+),([0-9]+):([0-9]+):([0-9]+)([+-][0-9]+)\"$", REG_EXTENDED);
 	if (reti) 
@@ -306,7 +304,7 @@ int PickTextSMSIndex(int fd,int index,textsms_t *sms)
 	char 	field[MAXATRES];
 	regex_t	regex;
 	regmatch_t	matches[11];	//Esperamos 10
-	int		i, reti;
+	int		i, reti, atret;
 	
 	
 	/* Ponemos el modem en modo Texto */
@@ -316,20 +314,26 @@ int PickTextSMSIndex(int fd,int index,textsms_t *sms)
 		return 0;
 	}
 	sprintf(cmd,"CMGR=%d",index);
-	printf("Sending %s\n",cmd);
 	init_rest(&res);
 	set_rest_cmd(&res,cmd);
-	if ( !SendATCommand2(fd,&res) )
+	if ( atret=SendATCommand2(fd,&res) )
 	{
-		fprintf(stderr,"PickTextSMSIndex:SendAT failed");
+		fprintf(stderr,"PickTextSMSIndex:SendAT failed with code %d\n",atret);
+		free_rest(&res);
+		return 0;
+	}
+	
+	// Hasta aquí, lo básico ha ido bien. El comando puede tener un OK (es decir, el mensaje con ese index
+	// existe. O un +CMS Error.
+	if ( is_cm_error(res) )
+	{
 		free_rest(&res);
 		return 0;
 	}
 	// El comenaod puede haber ido bien, pero no haber dado OK.
 	if ( !is_at_ok(res) )
 	{
-		fprintf(stderr,"PickTextSMSIndex: AT+CMGR failed");
-		DumpATOutput(res);
+		
 		free_rest(&res);
 		return 0;
 	}
@@ -434,7 +438,160 @@ int PickTextSMSIndex(int fd,int index,textsms_t *sms)
 	
 	// Last, but not least, the message.
 	getline_rest(res,1,sms->m_mensaje,SMS_MAXSMSTXT);
-	DumpATOutput(res);
-	DumpTextSMS(stdout,*sms);
+	free_rest(&res);
+	return 1;
+}
+
+
+int PickTextSMSNotRead(int fd,textsmslist_t *smslist)
+{
+	res_t 		res;
+	int			nreslines;
+	regex_t		regex;
+	int			reti;
+	char 		msgbuf[100];
+	char		tmpbuf[MAXATRES];
+	char		line[MAXATRES];
+	int			nl;
+	textsms_t	sms;
+	regmatch_t	matches[12];	//Esperamos 11
+	int			atret;
+	
+	/* Damos por hecho que la lista viene inicializada. */
+	
+	/* Ponemos el modem en modo Texto */
+	if ( !SetSMSMode(fd,SMSMODE_TEXT) )
+	{
+		fprintf(stderr,"PickTextSMSNotRead: SetSMSMode() failed.\n");
+		FreeTextSMSList(smslist);
+		return 0;
+	} 
+	// Ahora ejecutamos el CMGL="ALL"
+	init_rest(&res);
+	set_rest_cmd(&res,"CMGL=\"REC UNREAD\"");
+	
+	/* No podemos usar SendATCommand porque lo que vuelve es larguísimo. */
+	
+	if ( atret=SendATCommand2(fd,&res) )
+	{
+		fprintf(stderr,"PickTextSMSNotRead: SendAT2 failed with code %d\n",atret);
+		free_rest(&res);
+		return 0;
+	}
+	
+	// Al final de todo hay un OK.
+	if ( !is_at_ok(res) )
+	{
+		fprintf(stderr,"CMGL=\"REC UNREAD\" failed\n");
+		free_rest(&res);
+		return 0;
+	}
+	
+	// Ahora viene la gracia de procesar todas las líneas.
+	//DumpATOutput(res);
+	
+	/* Each SMS starts with +CMGL. We iterate the whole answer looking 
+	 * for this. It ends with an OK.
+	 * We iterate counting lines to make sure we don't get lost 
+	 * and that we can give some sort of feedback if something fails.
+	 */
+	nreslines=count_rest_lines(res);
+	reti = regcomp(&regex, "^\\+CMGL: *([0-9]+),([0-9]+),\"([^\"]*)\",\"([+0-9]+)\",\"([0-9]+)/([0-9]+)/([0-9]+),([0-9]+):([0-9]+):([0-9]+)([+-][0-9]+)\"$", REG_EXTENDED);
+	if (reti) 
+	{
+		fprintf(stderr, "PickTextSMSNotRead: Could not compile regex\n");
+		return(0);
+	}
+
+	for(nl=0;nl<nreslines;nl++)
+	{
+		getline_rest(res,nl,line,MAXATRES);
+		reti = regexec(&regex, line, 12, matches, 0);
+		if (!reti) 
+		{
+			// Tenemos un match. Vamos a por los campos. 
+			int k;
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[1].rm_so;k<matches[1].rm_eo;k++)
+				tmpbuf[k-matches[1].rm_so]=line[k];
+			sms.m_index=atoi(tmpbuf);
+			
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[2].rm_so;k<matches[2].rm_eo;k++)
+				tmpbuf[k-matches[2].rm_so]=line[k];
+			sms.m_type=atoi(tmpbuf);
+			
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[3].rm_so;k<matches[3].rm_eo;k++)
+				tmpbuf[k-matches[3].rm_so]=line[k];
+			sms.m_stat=GetStatInt(tmpbuf);
+			
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[4].rm_so;k<matches[4].rm_eo;k++)
+				tmpbuf[k-matches[4].rm_so]=line[k];
+			strncpy(sms.m_telf,tmpbuf,SMS_MAXTELF);
+			
+			struct tm	t;
+			
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[5].rm_so;k<matches[5].rm_eo;k++)
+				tmpbuf[k-matches[5].rm_so]=line[k];
+			t.tm_year=100+atoi(tmpbuf);
+			
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[6].rm_so;k<matches[6].rm_eo;k++)
+				tmpbuf[k-matches[6].rm_so]=line[k];
+			t.tm_mon=atoi(tmpbuf)-1;
+			
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[7].rm_so;k<matches[7].rm_eo;k++)
+				tmpbuf[k-matches[7].rm_so]=line[k];
+			t.tm_mday=atoi(tmpbuf);
+			
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[8].rm_so;k<matches[8].rm_eo;k++)
+				tmpbuf[k-matches[8].rm_so]=line[k];
+			t.tm_hour=atoi(tmpbuf);
+			memset(tmpbuf,'\0',MAXATRES);
+			
+			for(k=matches[9].rm_so;k<matches[9].rm_eo;k++)
+				tmpbuf[k-matches[9].rm_so]=line[k];
+			t.tm_min=atoi(tmpbuf);
+			memset(tmpbuf,'\0',MAXATRES);
+			for(k=matches[10].rm_so;k<matches[10].rm_eo;k++)
+				tmpbuf[k-matches[10].rm_so]=line[k];
+			t.tm_sec=atoi(tmpbuf);
+			t.tm_isdst=-1;
+			sms.m_date=mktime(&t);
+			
+			// Only the message is missing.
+			nl++;
+			getline_rest(res,nl,line,MAXATRES);
+			strncpy(sms.m_mensaje,line,SMS_MAXSMSTXT);
+			
+			/* So we have the SMS in the sms structure.
+			 * Now we add it to the list.
+			 */
+			if ( !AddTextSMSEnd(sms,smslist) )
+			{
+				fprintf(stderr,"PicTextSMSNotRead():: Error adding SMS to list\n");
+				regfree(&regex);
+				free_rest(&res);
+				return 0;
+			}
+		} else 
+			if (reti == REG_NOMATCH) 
+			{
+			} else 
+			{
+				regerror(reti, &regex, msgbuf, sizeof(msgbuf));
+				fprintf(stderr, "Regex match failed: %s\n", msgbuf);
+				regfree(&regex);
+				free_rest(&res);
+				return 0;
+			}
+	}
+	regfree(&regex);
+	free_rest(&res);
 	return 1;
 }

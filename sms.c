@@ -75,3 +75,92 @@ void DumpTextSMS(FILE *f,textsms_t sms)
 	fprintf(f,"%s\n", tmpbuf);
 	fprintf(f,"[%s]\n",sms.m_mensaje);
 }
+
+/* 
+ * GetTextSMSDate()
+ * Enero 2017
+ * Retorna la fecha en un solo time_t
+ */
+time_t GetTextSMSDate(textsms_t sms)
+{
+	return sms.m_date;
+}
+
+/* 
+ * GetTextSMSDate()
+ * Enero 2017
+ * Retorna el tipo de codificación
+ */
+int GetTextSMSType(textsms_t sms)
+{
+	return sms.m_type;
+}
+
+
+/*
+ * GetTextSMSDateString()
+ * Enero 2017
+ * Retorna la cadena de la fecha.
+ */
+void GetTextSMSDateString(char *buff,textsms_t sms)
+{
+	struct tm	t;
+	t = *localtime(&sms.m_date);
+	strftime(buff, 120, "%a %Y-%m-%d %H:%M:%S %Z", &t);
+}
+
+
+/* 
+ * GetTextSMSPhone()
+ * Enero 2017
+ * Retorna el teléfono remitente.
+ */
+void GetTextSMSPhone(char *buff,textsms_t sms)
+{
+	strcpy(buff,sms.m_telf);
+}
+
+
+/* 
+ * GetTextSMSMessageRaw()
+ * Enero 2017
+ * Retorna el mensaje sin decodificar.
+ */
+void GetTextSMSMessageRaw(char *buff, textsms_t sms)
+{
+	strcpy(buff,sms.m_mensaje);
+}
+
+/* 
+ * GetTextSMSMessage()
+ * Enero 2017
+ * Retorna el texto del mensaje. Si es de tipo 2 (unicode) lo transforma
+ * a ascii.
+ */
+void GetTextSMSMessage(char *buff,textsms_t sms)
+{
+	if ( sms.m_type == SMS_TYPE_DEFAULT || sms.m_type == SMS_TYPE_8BIT )
+	{
+		strcpy(buff,sms.m_mensaje);
+		return;
+	}
+	// Vamos a decodificar. Vamos leyendo los grupos de caracteres de 
+	// 4 en 4.
+	
+	long int li;
+	int 	l=strlen(sms.m_mensaje);
+	int     c,i,k;
+	char 	tmpbuff[5];
+	
+	memset(tmpbuff,'\0',5);
+	
+	for ( c=0, k=0; c<(l-4) ; c+=4 )
+	{
+		for ( i =0 ; i<4 ; i++ )
+			tmpbuff[i]=sms.m_mensaje[i+c];
+		li=strtol(tmpbuff,NULL,16);
+		//printf("%s -> %d -> %c\n",tmpbuff,li,li);
+		buff[k++]=li;
+	}	
+	
+}

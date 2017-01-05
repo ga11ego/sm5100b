@@ -167,7 +167,7 @@ int main()
 	{
 		fprintf(stderr,"System Error picking message\n");
 	} else {
-		// Imprimimos el mensaje.
+		DumpTextSMS(stdout,sms);
 	}
 
 	

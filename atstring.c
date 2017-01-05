@@ -15,17 +15,14 @@
 /* 
  * init_rest()
  * Agosto 2016
- * Inicializa a valores seguros un res_t
- * retorna 1 si todo va bien. 0 en cualquier otro caso. 
  * 
  * El problema es que no podemos saber si el puntero res->str es NULL o no. No podemos saber 
  * si ha sido inicializado anteriormente. El que llame a esto deberá ser cuidadoso.
  */
-int init_rest(res_t *res)
+void init_rest(res_t *res)
 {
 	memset(res->atcmd,'\0',MAXATCMD);
 	res->strings=NULL;
-	return 1;
 }
 
 /*
@@ -101,10 +98,11 @@ int count_rest_lines(res_t res)
  * read(). Así que necesitaremos asegurarnos de que todo queda bien.
  * Recuerda que aquí no hacemos procesado de ningún tipo. Solo 
  * leemos líneas y las metemos en el res.
- * Enero 2017. 
- * Cuando hay un error, retornamos 1 aunque dé error.
  * 
- * Aclaración para los errores: Si retorna 1, es que el comando "ha ido
+ * Enero 2017. 
+ * Cuando hay un error, retornamos 0 aunque dé error el modem
+ * 
+ * Aclaración para los errores: Si retorna 0, es que el comando "ha ido
  * bien"... es decir, no ha petado. Pero no por ello debe salir un OK 
  * al final.
  * 
@@ -129,7 +127,7 @@ int SendATCommand2(int fd, res_t *res)
 	if ( write(fd,atcmd,strlen(atcmd)) == -1 )
 	{
 		/* Cagada */
-		return 0;
+		return AT_ERROR_WRITEFAILED;
 	}
 	
 	// Preparamos las regexp.
@@ -137,7 +135,7 @@ int SendATCommand2(int fd, res_t *res)
 	if (reti) 
 	{
 		fprintf(stderr, "Could not compile regex\n");
-		return 0;
+		return AT_ERROR_REGEXPFAILED;
 	}
 	
 	
@@ -164,14 +162,14 @@ int SendATCommand2(int fd, res_t *res)
 						if ( strcmp(tmpbuff,"OK") == 0 )
 						{
 							regfree(&regex_error);
-							return 1;
+							return 0;
 						} else {
 							// Podría ser un +CMS ERROR:
 							reti = regexec(&regex_error, tmpbuff, 0, NULL, 0);
 							if ( !reti )
 							{
 								regfree(&regex_error);
-								return 1;
+								return 0;
 							}
 						}
 						// Ponemos a 0 todo.
@@ -185,7 +183,7 @@ int SendATCommand2(int fd, res_t *res)
 				// Muy raro. El read ha dado error. 
 				fprintf(stderr,"ERROR: read() returned unexpected value %d\n",rr);
 				regfree(&regex_error);
-				return 0;
+				return AT_ERROR_READFAILED;
 			}
 		} else {
 			tmpbuff[buffptr++]=ic;
@@ -194,17 +192,17 @@ int SendATCommand2(int fd, res_t *res)
 	if ( rr==0 )	// EOF.
 	{
 		regfree(&regex_error);
-		return 1;
+		return 0;
 	}
 	if ( rr==-1 )
 	{
 		fprintf(stderr,"read() returned -1\n");
 		regfree(&regex_error);
-		return 0;
+		return AT_ERROR_READFAILED;
 	}
 	fprintf(stderr,"Unexpected error\n");
 	regfree(&regex_error);
-	return 0;
+	return AT_ERROR_UNEXPECTED;
 
 }
 
@@ -222,6 +220,37 @@ int is_at_ok(const res_t res)
 		return 0;
 	if ( strcmp(p->str,"OK")==0 )
 		return 1;
+	return 0;
+}
+
+/* 
+ * is_cm_error
+ * Enero 2017
+ * Retorna 1 si es un +CM. ERROR.
+ */
+int is_cm_error(const res_t res)
+{
+	regex_t	regex_error;
+	int		reti;
+	
+	ll_t *p;
+	if ( res.strings )
+		p=gotolast_ll(res.strings);
+	else 
+		return 0;
+	// Preparamos las regexp.
+	reti = regcomp(&regex_error, "^\\+CM. ERROR:", REG_EXTENDED);
+	if (reti) 
+	{
+		fprintf(stderr, "Could not compile regex\n");
+		return 0;
+	}
+	reti = regexec(&regex_error, p->str, 0, NULL, 0);
+	regfree(&regex_error);
+	if ( !reti )
+	{
+		return 1;
+	}
 	return 0;
 }
 

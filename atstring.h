@@ -28,6 +28,11 @@
 
 #define MAXINPUTBUFFER 1024
 
+#define AT_ERROR_WRITEFAILED	1
+#define AT_ERROR_REGEXPFAILED	2
+#define AT_ERROR_READFAILED 	3
+#define AT_ERROR_UNEXPECTED 	4
+
 
 typedef struct {
 	char 	atcmd[MAXATCMD];
@@ -35,7 +40,7 @@ typedef struct {
 } res_t;
 
 
-int 	init_rest(res_t *);
+void 	init_rest(res_t *);
 void 	free_rest(res_t *);
 void 	set_rest_cmd(res_t *, const char *);
 int 	add_rest_line(res_t *,const char *);
@@ -51,6 +56,7 @@ void SyslogATOutput(const res_t);
 int SendATCommand2(int, res_t*);
 
 int is_at_ok(const res_t);
+int is_cm_error(const res_t);
 int check_at_response2(res_t,const char *);
 int check_at_response(char *, const char *);
 

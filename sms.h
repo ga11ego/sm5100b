@@ -30,6 +30,10 @@
 
 #define SMS_MAXTELF			32
 #define SMS_MAXSMSTXT		1024
+
+#define SMS_TYPE_DEFAULT	0
+#define SMS_TYPE_8BIT		1
+#define SMS_TYPE_UCS2		2
  
 typedef struct {
 	int 	m_index;
@@ -44,6 +48,12 @@ void 	DumpTextSMS(FILE *,textsms_t);
 void 	GetStatTxt(int,char*);
 int		GetStatInt(const char *);
 
+void 	GetTextSMSMessage(char *,textsms_t);
+void	GetTextSMSMessageRaw(char *, textsms_t);
+void	GetTextSMSPhone(char *,textsms_t);
+time_t	GetTextSMSDate(textsms_t);
+void	GetTextSMSDateString(char *,textsms_t);
+int		GetTextSMSType(textsms_t);
 
 
 #endif

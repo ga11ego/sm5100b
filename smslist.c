@@ -129,3 +129,55 @@ void DumpTextSMSList(FILE *f,textsmslist_t list)
 	if (list.m_head)
 		DumpTextSMSNodeList(f,list.m_head);
 }
+
+
+/* int CountTextSMSNodeList(textsmsnode_t *node)
+ * January 2017
+ * Counts all the elements. 
+ */
+int CountTextSMSNodeList(textsmsnode_t *node)
+{
+	if ( node->m_next )
+		return 1+CountTextSMSNodeList(node->m_next);
+	else 
+		return 1;
+}
+
+/* int CountTextSMS(textsmslist_t);
+ * January 2017
+ * Counts the amount of SMSs in the list.
+ */
+int CountTextSMS(textsmslist_t smslist)
+{
+	if ( smslist.m_head )
+		return CountTextSMSNodeList(smslist.m_head);
+	else
+		return 0;
+}
+
+/* GetTextSMSNode()
+ * January 2017
+ * returns the SMS in the selected position
+ */
+int GetTextSMSNode(textsms_t *psms,textsmsnode_t *node, int pos)
+{
+	if ( pos == 0 )
+	{
+		memcpy(psms,node->m_sms,sizeof(textsms_t));
+		return 1;
+	} else 
+		if ( node->m_next )
+			return GetTextSMSNode(psms,node->m_next,--pos);
+	return 0;
+}
+
+/* GetTextSMS()
+ * Jan 2017
+ * Returns the SMS in the selected position in the list (not the index)
+ */
+int GetTextSMS(textsms_t *psms,textsmslist_t smslist,int pos)
+{
+	if ( !smslist.m_head )
+		return 0;
+	return GetTextSMSNode(psms,smslist.m_head,pos);
+}

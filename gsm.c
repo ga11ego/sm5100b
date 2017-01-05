@@ -18,30 +18,28 @@
 int SendAT(int fd)
 {
 	res_t	res;
-	int 	i=0;
 	char	tmpbuff[MAXATRES];
+	int		atret;
 	
 	init_rest(&res);
 	set_rest_cmd(&res,"");
-	if ( !SendATCommand2(fd,&res) )
+	if ( atret=SendATCommand2(fd,&res) )
 	{
-		syslog(LOG_LOCAL7,"SendAT failed");
+		fprintf(stderr,"SendATCommand2 failed with code %d\n",atret);
 		free_rest(&res);
 		return 0;
 	}
 	/* Si tot va bé, tenim 1 linia i OK	*/
 	if ( !getline_rest(res,0,tmpbuff,MAXATRES) )
-		return 0;
-	if ( strcmp(tmpbuff,"OK")==0 )
-			i=1;
-		
-	if ( !i )
 	{
-		syslog(LOG_LOCAL7,"SendAT Failed");
-		SyslogATOutput(res);
+		free_rest(&res);
+		return 0;
 	}
 	free_rest(&res);
-	return i;
+	if ( strcmp(tmpbuff,"OK")==0 )
+		return 1;
+	else
+		return 0;	
 }
 
 int GetCSQBer(int fd)
@@ -52,19 +50,19 @@ int GetCSQBer(int fd)
 	char 	berstr[32];
 	char 	*strptr;
 	char	line0[MAXATRES];
+	int		atret;
 	
 	init_rest(&res);
 	set_rest_cmd(&res,"CSQ");
-	if ( !SendATCommand2(fd,&res) )
+	if ( atret=SendATCommand2(fd,&res) )
 	{
-		syslog(LOG_LOCAL7,"GetCSQBer:SendAT failed");
+		fprintf(stderr,"GetCSQBer:SendAT failed with code %d\n",atret);
 		free_rest(&res);
 		return 0;
 	}
 	if ( !is_at_ok(res) )
 	{
-		syslog(LOG_LOCAL7,"CSQ failed");
-		SyslogATOutput(res);
+		fprintf(stderr,"CSQ failed\n");
 		free_rest(&res);
 		return 0;
 	}
@@ -74,8 +72,7 @@ int GetCSQBer(int fd)
 		return 0;
 	if ( !check_at_response(line0,"CSQ") ) 
 	{
-		syslog(LOG_LOCAL7,"GetCSQBer:CSQ, bad response");
-		SyslogATOutput(res);
+		fprintf(stderr,"GetCSQBer:CSQ, bad response\n");
 		return 0;
 	}
 	memset(berstr,'\0',32);
@@ -99,12 +96,13 @@ int GetCSQRSSI(int fd)
 	int 	i;
 	char 	rssistr[32];
 	char	line0[MAXATRES];
+	int		atret;
 	
 	init_rest(&res);
 	set_rest_cmd(&res,"CSQ");
-	if ( !SendATCommand2(fd,&res) )
+	if ( atret=SendATCommand2(fd,&res) )
 	{
-		syslog(LOG_LOCAL7,"GetCSQRSSI:SendAT failed");
+		fprintf(stderr,"GetCSQRSSI:SendAT failed with code %d\n",atret);
 		free_rest(&res);
 		return 0;
 	}
@@ -120,8 +118,7 @@ int GetCSQRSSI(int fd)
 		return 0;
 	if ( !check_at_response(line0,"CSQ") ) 
 	{
-		syslog(LOG_LOCAL7,"GetCSQRSSI:CSQ, bad response");
-		SyslogATOutput(res);
+		fprintf(stderr,"GetCSQRSSI:CSQ, bad response\n");
 		return 0;
 	}
 	memset(rssistr,'\0',32);
@@ -149,19 +146,19 @@ int GetCPIN(int fd)
 	int 	i;
 	char 	cpinstr[64];
 	char	line0[MAXATRES];
+	int		atret;
 	
 	init_rest(&res);
 	set_rest_cmd(&res,"CPIN?");
-	if ( !SendATCommand2(fd,&res) )
+	if ( atret=SendATCommand2(fd,&res) )
 	{
-		syslog(LOG_LOCAL7,"GetCPIN:SendAT failed");
+		fprintf(stderr,"GetCPIN:SendAT failed with code %d",atret);
 		free_rest(&res);
 		return 0;
 	}
 	if ( !is_at_ok(res) )
 	{
-		syslog(LOG_LOCAL7,"CPIN? failed");
-		SyslogATOutput(res);
+		fprintf(stderr,"CPIN? failed\n");
 		free_rest(&res);
 		return 0;
 	}
@@ -170,8 +167,7 @@ int GetCPIN(int fd)
 		return 0;
 	if ( !check_at_response(line0,"CPIN") ) 
 	{
-		syslog(LOG_LOCAL7,"GetCPIN: CPIN?, bad response");
-		SyslogATOutput(res);
+		fprintf(stderr,"GetCPIN: CPIN?, bad response\n");
 		free_rest(&res);
 		return 0;
 	}
@@ -206,6 +202,7 @@ int SetCPIN(const char *pin, int fd)
 	int 	i;
 	res_t	res;
 	char	comp[128];
+	int		atret;
 	
 	
 	// Si no lo has puesto de 4 cifras, nos vamos
@@ -219,18 +216,16 @@ int SetCPIN(const char *pin, int fd)
 	init_rest(&res);
 	sprintf(comp,"CPIN=\"%s\"",pin);
 	set_rest_cmd(&res,comp);
-	if ( !SendATCommand2(fd,&res) )
+	if ( atret=SendATCommand2(fd,&res) )
 	{
-		syslog(LOG_LOCAL7,"SetCPIN:SendAT failed");
-		SyslogATOutput(res);
+		fprintf(stderr,"SetCPIN: SendAT failed with code %d\n",atret);
 		free_rest(&res);
 		return 0;
 	}
 	// Si tenemos un OK, es que todo ha ido bien.
 	if ( !is_at_ok(res) )
 	{
-		syslog(LOG_LOCAL7,"SetCPIN:Failed");
-		SyslogATOutput(res);
+		fprintf(stderr,"SetCPIN: Failed\n");
 		free_rest(&res);
 		return 0;
 	}
@@ -253,19 +248,19 @@ int GetCCID(char *ccid,int maxlen, int fd)
 	res_t 	res;
 	int		i;
 	char	line0[MAXATRES];
+	int 	atret;
 	
 	init_rest(&res);
 	set_rest_cmd(&res,"CCID");
-	if ( !SendATCommand2(fd,&res) )
+	if ( atret=SendATCommand2(fd,&res) )
 	{
-		syslog(LOG_LOCAL7,"GetCCID: SendAT Failed");
+		fprintf(stderr,"GetCCID: SendAT failed with code %d\n",atret);
 		free_rest(&res);
 		return 0;
 	}
 	if ( !is_at_ok(res) )
 	{
-		syslog(LOG_LOCAL7,"CCID failed");
-		SyslogATOutput(res);
+		fprintf(stderr,"CCID failed\n");
 		free_rest(&res);
 		return 0;
 	}
@@ -291,19 +286,19 @@ int GetCCID(char *ccid,int maxlen, int fd)
 	res_t 	res;
 	int		i;
 	char	line0[MAXATRES];
+	int		atret;
 	
 	init_rest(&res);
 	set_rest_cmd(&res,"CGSN");
-	if ( !SendATCommand2(fd,&res) )
+	if ( atret=SendATCommand2(fd,&res) )
 	{
-		syslog(LOG_LOCAL7,"GetIMEI: SendAT Failed");
+		fprintf(stderr,"GetIMEI: SendAT failed with code %d\n",atret);
 		free_rest(&res);
 		return 0;
 	}
 	if ( !is_at_ok(res) )
 	{
-		syslog(LOG_LOCAL7,"IMEI failed");
-		SyslogATOutput(res);
+		fprintf(stderr,"IMEI failed\n");
 		free_rest(&res);
 		return 0;
 	}
