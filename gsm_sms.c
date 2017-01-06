@@ -287,14 +287,6 @@ int GetTextSMSList(int fd, textsmslist_t *smslist)
  * PickTextSMSIndex()
  * Lee el SMS con el index indicado. No borra el mensaje del modem.
  * Se basa en AT+CMGR=index
- * Example:
- * Mensaje correcto:
- * +CMGR: "REC READ",2,"121","16/09/01,18:33:32+08"
-00410020007000610072007400690072002000640065002000650073007400650020006D006F006D0065006E0074006F0020007000750065006400650073002000640069007300660072007500740061007200200064006500200074007500200062006F006E006F0020006400650020003200300030004D0042002000730069006E0020006C
- *
-OK
- * Si hay error
-+CMS ERROR: 321
  */
 int PickTextSMSIndex(int fd,int index,textsms_t *sms)
 {
@@ -592,6 +584,85 @@ int PickTextSMSNotRead(int fd,textsmslist_t *smslist)
 			}
 	}
 	regfree(&regex);
+	free_rest(&res);
+	return 1;
+}
+
+
+/* DeleteSMSIndex()
+ * Jan 2017
+ * Deletes message with provided index. Index in the GSM modem, of 
+ * course.
+ * Based on AT+CMGD=<index>,0
+ */
+int DeleteSMSIndex(int fd, int index)
+{
+	res_t 		res;
+	char		tmpbuff[1024];
+	int			atret;
+	
+	if ( !SetSMSMode(fd,SMSMODE_TEXT) )
+	{
+		fprintf(stderr,"DeleteSMSIndex: SetSMSMode() failed.\n");
+		return 0;
+	} 
+	// Ahora ejecutamos el CMGL="ALL"
+	init_rest(&res);
+	sprintf(tmpbuff,"CMGD=%d,0",index);
+	set_rest_cmd(&res,tmpbuff);
+	
+	if ( atret=SendATCommand2(fd,&res) )
+	{
+		fprintf(stderr,"DeleteSMSIndex: SendAT2 failed with code %d\n",atret);
+		free_rest(&res);
+		return 0;
+	}
+	
+	// Al final de todo hay un OK.
+	if ( !is_at_ok(res) )
+	{
+		fprintf(stderr,"CMGD=index,0 failed\n");
+		free_rest(&res);
+		return 0;
+	}
+	// Pues no hay nada más que hacer.
+	free_rest(&res);
+	return 1;
+}
+
+/* DeleteSMSAllRead()
+ * Jan 2017
+ * Deletes all read SMSs. Based on AT+CMGD=0,2
+ */
+int DeleteSMSAllRead(int fd)
+{
+	res_t 		res;
+	int			atret;
+	
+	if ( !SetSMSMode(fd,SMSMODE_TEXT) )
+	{
+		fprintf(stderr,"DeleteSMSALLRead: SetSMSMode() failed.\n");
+		return 0;
+	} 
+	// Ahora ejecutamos el CMGL="ALL"
+	init_rest(&res);
+	set_rest_cmd(&res,"CMGD=1,2");
+	
+	if ( atret=SendATCommand2(fd,&res) )
+	{
+		fprintf(stderr,"DeleteSMSALLRead: SendAT2 failed with code %d\n",atret);
+		free_rest(&res);
+		return 0;
+	}
+	
+	// Al final de todo hay un OK.
+	if ( !is_at_ok(res) )
+	{
+		fprintf(stderr,"DeleteSMSALLRead: CMGD=1,2 failed\n");
+		free_rest(&res);
+		return 0;
+	}
+	// Pues no hay nada más que hacer.
 	free_rest(&res);
 	return 1;
 }

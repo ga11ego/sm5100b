@@ -106,7 +106,7 @@ void GetTextSMSDateString(char *buff,textsms_t sms)
 {
 	struct tm	t;
 	t = *localtime(&sms.m_date);
-	strftime(buff, 120, "%a %Y-%m-%d %H:%M:%S %Z", &t);
+	strftime(buff, 120, "%d/%m/%Y %H:%M:%S", &t);
 }
 
 
@@ -163,4 +163,16 @@ void GetTextSMSMessage(char *buff,textsms_t sms)
 		buff[k++]=li;
 	}	
 	
+}
+
+/* GetTextSMSHeader()
+ * Jan 2017
+ * Compiles a header of the SMS in a single buffer. Index, phone and date.
+ */
+void GetTextSMSHeader(char *buff,textsms_t sms)
+{
+	char	tmpbuff[1024];
+	
+	GetTextSMSDateString(tmpbuff,sms);
+	sprintf(buff,"%d %s %s",sms.m_index, sms.m_telf, tmpbuff);
 }

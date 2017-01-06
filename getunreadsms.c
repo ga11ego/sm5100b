@@ -18,6 +18,7 @@ int main(int argc, char **argv)
 	textsmslist_t	smslist;
 	int 			i,nsms;
 	textsms_t		sms;
+	char			tmpbuff[SMS_MAXSMSTXT];
 	
 	if ( (fd = open(devicename, O_RDWR | O_NOCTTY | O_SYNC ))==-1 )
 	{
@@ -37,7 +38,11 @@ int main(int argc, char **argv)
 	for(i=0; i<nsms; i++)
 	{
 		GetTextSMS(&sms,smslist,i);
-		DumpTextSMS(stdout,sms);
+		GetTextSMSHeader(tmpbuff,sms);
+		printf("%s\n",tmpbuff);
+		GetTextSMSMessage(tmpbuff,sms);
+		printf("%s\n",tmpbuff);
+		
 	}
 	FreeTextSMSList(&smslist);
 	close(fd);

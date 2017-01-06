@@ -154,21 +154,13 @@ int main()
 		printf("Error setting SMS mode to TEXT\n");
 	
 	// Vamos a empezar el baile.
-	//printf("Now reading SMS's. Please wait...\n");
-	//InitTextSMSList(&smslist);
-	//GetTextSMSList(fd,&smslist);
-	//DumpTextSMSList(stdout,smslist);
-	//FreeTextSMSList(&smslist);
+	printf("Now reading SMS's. Please wait...\n");
+	InitTextSMSList(&smslist);
+	GetTextSMSList(fd,&smslist);
+	DumpTextSMSList(stdout,smslist);
+	FreeTextSMSList(&smslist);
 	
-	// Vamos a probar de coger el mensaje número 3
-	textsms_t	sms;
-	printf("Picking message 3\n");
-	if ( !PickTextSMSIndex(fd,3,&sms) )
-	{
-		fprintf(stderr,"System Error picking message\n");
-	} else {
-		DumpTextSMS(stdout,sms);
-	}
+	
 
 	
 	

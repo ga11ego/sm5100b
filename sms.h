@@ -54,6 +54,7 @@ void	GetTextSMSPhone(char *,textsms_t);
 time_t	GetTextSMSDate(textsms_t);
 void	GetTextSMSDateString(char *,textsms_t);
 int		GetTextSMSType(textsms_t);
+void 	GetTextSMSHeader(char *,textsms_t);
 
 
 #endif
