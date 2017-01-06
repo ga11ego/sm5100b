@@ -18,5 +18,7 @@ int PickTextSMSIndex(int,int,textsms_t *);
 int PickTextSMSNotRead(int,textsmslist_t *);
 int DeleteSMSIndex(int, int);
 int DeleteSMSAllRead(int);
+
+int	SendTextSMS(int,char *,char *);
  
  #endif

@@ -10,26 +10,6 @@
 #include "smslist.h"
 #include "sms.h"
 
-void SetUSBUp(int fd)
-{
-	speed_t baud = B9600; /* baud rate */
-
-	/* set the other settings (in this case, 9600 8N1) */
-	struct termios settings;
-	tcgetattr(fd, &settings);
-
-	cfsetospeed(&settings, baud); /* baud rate */
-	settings.c_cflag &= ~PARENB; /* no parity */
-	settings.c_cflag &= ~CSTOPB; /* 1 stop bit */
-	settings.c_cflag &= ~CSIZE;
-	settings.c_cflag |= CS8 | CLOCAL; /* 8 bits */
-//	settings.c_lflag = ICANON; /* canonical mode */
-	settings.c_oflag &= ~OPOST; /* raw output */
-
-	tcsetattr(fd, TCSANOW, &settings); /* apply the settings */
-	tcflush(fd, TCOFLUSH);
-}
-   
 int main() 
 {
     char byte;
@@ -47,9 +27,6 @@ int main()
 		printf("Open failed\n");
 		return 1;
 	}
-	
-//	set_interface_attribs (fd, B9600, 0);  // set speed to 115,200 bps, 8n1 (no parity)
-//	set_blocking (fd, 0);                // set no blocking
 	
 	SetUSBUp(fd);
 	

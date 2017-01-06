@@ -666,3 +666,92 @@ int DeleteSMSAllRead(int fd)
 	free_rest(&res);
 	return 1;
 }
+
+/* ReadModemLine()
+ * This reads up to a 10 (\r) I guess I should have done the same in 
+ * atstring. Nevertheless, this one could also do timeout and it could 
+ * be used to read even those that don't finish with a 10.
+ * It does happen when sending an SMS. It sends a line with '> ' and 
+ * waits for the message ending with \032 (CtrlZ)
+ * Funny it is very easy in Python. Here, we should set up timeouts.
+ */
+int ReadModemLine(int fd,char *tmpbuff,size_t len)
+{
+	char 	ic;
+	int 	rr;
+	int		counter=0;
+	
+	memset(tmpbuff,'\0',len);
+	do {
+		rr=read(fd,&ic,1);
+		if ( ic!=10 && ic!=13 )
+			tmpbuff[counter++]=ic;
+	} while ( rr=1 && ic!=10 && counter<(len-1));
+}
+
+/* SendTextSMS()
+ * Jan 2017
+ * Send a text SMS. Provide the phone and the 140 char message and
+ * it's gone ;-)
+ * Using AT+CMGS.
+ * Remember that this one works slightly different from the others. 
+ * You send the command (CMGS) and then you wait to get output. 
+ * And then you write the message ending with \032.
+ */
+int SendTextSMS(int fd,char *phone,char *message)
+{
+	res_t 		res;
+	int			atret;
+	char		cmdbuff[255];
+	char		messbuff[255];
+	char		atcmd[255];
+	char		tmpbuff[1024];
+	char		ic;
+	int			rr;
+	
+	if ( !SetSMSMode(fd,SMSMODE_TEXT) )
+	{
+		fprintf(stderr,"SendTextSMS: SetSMSMode() failed.\n");
+		return 0;
+	} 
+	
+	/* Due to the different way of working when we send. We will not
+	 * use SendATCommand2. We have to wait for '>' prompt to send
+	 * the message. And that makes SendATCommand2 useless.
+	 */
+	sprintf(atcmd,"AT+CMGS=\"%s\"\r",phone);
+	if ( write(fd,atcmd,strlen(atcmd)) == -1 )
+	{
+		fprintf(stderr,"SendTextSMS: Write failed\n");
+		return 0;
+	}
+	// Now we read one single line. If it's a '>', everything is ok.
+	// if not... we abort.
+	ReadModemLine(fd,tmpbuff,1024);		// This is an empty line, for sure.
+	// Now it comes with a line with '> ' with no end of line.
+	read(fd,&ic,1);
+	if ( ic!='>' )
+		return 1;
+	read(fd,&ic,1);
+	if ( ic!=' ' )
+		return 1;
+	// Now we write the message.
+	sprintf(messbuff,"%s\032",message);
+	if ( write(fd,messbuff,strlen(messbuff)) == -1 )
+	{
+		fprintf(stderr,"SendTextSMS: Error writing message\n");
+		return 0;
+	} else {
+		ReadModemLine(fd,tmpbuff,1024);		// Empty line
+		ReadModemLine(fd,tmpbuff,1024);		// +CMGS
+		ReadModemLine(fd,tmpbuff,1024);		// Empty line
+		ReadModemLine(fd,tmpbuff,1024); 	// OK
+		return 1;
+		// Now we read the output. It should be : 
+		// +CMGS: XX
+	}
+	
+	// We should ever ever reach this point.
+	fprintf(stderr,"SendTextSMS: Unexpected error at the end\n");
+	return 0;
+}

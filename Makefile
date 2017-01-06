@@ -26,7 +26,7 @@ DEPS=.depend
 all: ${ALL}
 
 
-tools: readsms getunreadsms delsms
+tools: readsms getunreadsms delsms sendsms
 
 readsms: readsms.o ${LIBOBJECTS}
 	${CC} readsms.o ${LIBOBJECTS} -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
@@ -36,6 +36,9 @@ getunreadsms: getunreadsms.o ${LIBOBJECTS}
 	
 delsms: delsms.o ${LIBOBJECTS}
 	${CC} delsms.o ${LIBOBJECTS} -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
+
+sendsms: sendsms.o ${LIBOBJECTS}
+	${CC} sendsms.o ${LIBOBJECTS} -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
 
 sm5100b: ${OBJECTS}
 #	echo linking main application "-->" $@
@@ -50,7 +53,7 @@ sm5100b: ${OBJECTS}
 
 
 clean: 
-	rm -rf *.o sm5100b readsms getunreadsms delsms .depend 
+	rm -rf *.o sm5100b readsms getunreadsms delsms sendsms .depend 
 
 
 

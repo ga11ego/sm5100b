@@ -15,8 +15,6 @@
 #include <unistd.h>
 #include <syslog.h>
 
-int set_interface_attribs (int, int , int );
-void set_blocking (int , int );
-
+void SetUSBUp(int);
 
 #endif
