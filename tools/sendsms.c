@@ -9,8 +9,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "gsm_sms.h" 
-#include "serial.h"
+#include "../gsm_sms.h" 
+#include "../serial.h"
  
 int main(int argc, char **argv)
 {

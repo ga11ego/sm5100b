@@ -11,9 +11,9 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "gsm.h"
-#include "smslist.h"
-#include "sms.h"
+#include "../gsm.h"
+#include "../smslist.h"
+#include "../sms.h"
  
 void main(int argc,char **argv)
 {

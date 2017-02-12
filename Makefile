@@ -16,9 +16,8 @@ ALL=sm5100b tools sms_listen
 
 LIBOBJECTS=gsm.o atstring.o sms.o serial.o ulstr.o smslist.o gsm_sms.o
 OBJECTS=main.o ${LIBOBJECTS}
-CSOURCES=main.c gsm.c atstring.c sms.c serial.c ulstr.c smslist.c gsm_sms.c readsms.c getunreadsms.c delsms.c
+CSOURCES=main.c gsm.c atstring.c sms.c serial.c ulstr.c smslist.c gsm_sms.c 
 HSOURCES=gsm.h atstring.h sms.h serial.h ulstr.h smslist.h gsm_sms.h
-TOOLS=readsms getunreadsms delsms sendsms checkcpin 
 STATICLIB=libsms.a
 
 SOURCES=${CSOURCES} ${HSOURCES}
@@ -28,25 +27,11 @@ DEPS=.depend
 all: ${ALL}
 
 
-tools: ${TOOLS}
+tools: ${STATICLIB}
+	$(MAKE) -C tools all
 
 ${STATICLIB}: ${LIBOBJECTS}
 	ar cr ${STATICLIB} ${LIBOBJECTS}
-
-readsms: readsms.o ${STATICLIB}
-	${CC} readsms.o -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
-
-getunreadsms: getunreadsms.o ${STATICLIB}
-	${CC} getunreadsms.o  -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
-	
-delsms: delsms.o ${STATICLIB}
-	${CC} delsms.o  -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
-
-sendsms: sendsms.o ${STATICLIB}
-	${CC} sendsms.o  -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
-
-checkcpin: checkcpin.o ${STATICLIB}
-	${CC} checkcpin.o  -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
 
 sms_listen: ${STATICLIB}
 	$(MAKE) -C sms_listen all
@@ -67,6 +52,7 @@ sm5100b: main.o ${STATICLIB}
 clean: 
 	rm -rf *.o sm5100b ${TOOLS} ${STATICLIB} .depend 
 	$(MAKE) -C sms_listen clean
+	$(MAKE) -C tools clean
 
 
 

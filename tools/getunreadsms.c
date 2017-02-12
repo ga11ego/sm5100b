@@ -8,8 +8,8 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-#include "gsm_sms.h"
-#include "smslist.h"
+#include "../gsm_sms.h"
+#include "../smslist.h"
 
 int main(int argc, char **argv)
 {

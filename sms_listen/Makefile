@@ -25,9 +25,10 @@ DEPS=.depend
 
 all: ${ALL}
 
+${STATICLIB}:
+	$(MAKE) -C .. libsms.a
 
-
-sms_listen: sms_listen.o 
+sms_listen: sms_listen.o ${STATICLIB}
 	${CC} sms_listen.o  -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
 
 

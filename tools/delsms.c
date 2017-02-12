@@ -11,7 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "gsm_sms.h"
+#include "../gsm_sms.h"
 
 int main(int argc,char **argv)
 {

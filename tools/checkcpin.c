@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "gsm.h"
+#include "../gsm.h"
 
 int main(int argc, char **argv)
 {
