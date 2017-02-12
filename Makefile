@@ -8,16 +8,18 @@ CC = gcc
 
 
 CFLAGS = -g 
-LDFLAGS =  
-LIBS = -ldl 
+LDFLAGS =  -L. 
+LIBS = -ldl -lsms
 
 
-ALL=sm5100b tools
+ALL=sm5100b tools sms_listen
 
 LIBOBJECTS=gsm.o atstring.o sms.o serial.o ulstr.o smslist.o gsm_sms.o
 OBJECTS=main.o ${LIBOBJECTS}
 CSOURCES=main.c gsm.c atstring.c sms.c serial.c ulstr.c smslist.c gsm_sms.c readsms.c getunreadsms.c delsms.c
 HSOURCES=gsm.h atstring.h sms.h serial.h ulstr.h smslist.h gsm_sms.h
+TOOLS=readsms getunreadsms delsms sendsms checkcpin 
+STATICLIB=libsms.a
 
 SOURCES=${CSOURCES} ${HSOURCES}
 
@@ -26,29 +28,33 @@ DEPS=.depend
 all: ${ALL}
 
 
-tools: readsms getunreadsms delsms sendsms checkcpin sms_listen
+tools: ${TOOLS}
 
-readsms: readsms.o ${LIBOBJECTS}
-	${CC} readsms.o ${LIBOBJECTS} -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
+${STATICLIB}: ${LIBOBJECTS}
+	ar cr ${STATICLIB} ${LIBOBJECTS}
 
-getunreadsms: getunreadsms.o ${LIBOBJECTS}
-	${CC} getunreadsms.o ${LIBOBJECTS} -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
+readsms: readsms.o ${STATICLIB}
+	${CC} readsms.o -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
+
+getunreadsms: getunreadsms.o ${STATICLIB}
+	${CC} getunreadsms.o  -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
 	
-delsms: delsms.o ${LIBOBJECTS}
-	${CC} delsms.o ${LIBOBJECTS} -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
+delsms: delsms.o ${STATICLIB}
+	${CC} delsms.o  -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
 
-sendsms: sendsms.o ${LIBOBJECTS}
-	${CC} sendsms.o ${LIBOBJECTS} -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
+sendsms: sendsms.o ${STATICLIB}
+	${CC} sendsms.o  -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
 
-checkcpin: checkcpin.o ${LIBOBJECTS}
-	${CC} checkcpin.o ${LIBOBJECTS} -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
+checkcpin: checkcpin.o ${STATICLIB}
+	${CC} checkcpin.o  -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
 
-sms_listen: sms_listen.o ${LIBOBJECTS}
-	${CC} sms_listen.o ${LIBOBJECTS} -o $@ ${LDFLAGS} ${LIBS} ${CFLAGS}
+sms_listen: ${STATICLIB}
+	$(MAKE) -C sms_listen all
 
-sm5100b: ${OBJECTS}
+sm5100b: main.o ${STATICLIB}
 #	echo linking main application "-->" $@
-	${CC} ${OBJECTS} -o $@  ${LDFLAGS} ${LIBS} ${CFLAGS}
+	${CC} main.o -o $@  ${LDFLAGS} ${LIBS} ${CFLAGS}
+
 
 
 .SUFFIXES: .c .o
@@ -59,7 +65,8 @@ sm5100b: ${OBJECTS}
 
 
 clean: 
-	rm -rf *.o sm5100b readsms getunreadsms delsms sendsms checkcpin sms_listen .depend 
+	rm -rf *.o sm5100b ${TOOLS} ${STATICLIB} .depend 
+	$(MAKE) -C sms_listen clean
 
 
 

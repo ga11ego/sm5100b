@@ -13,8 +13,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "gsm_sms.h" 
-#include "serial.h"
+#include "../gsm_sms.h" 
+#include "../serial.h"
 
 int main(int argc, char **argv)
 {
@@ -53,6 +53,11 @@ int main(int argc, char **argv)
 		printf("%s: Error. You must specify a configuration file\n",argv[0]);
 		exit(1);
 	}
+	
+	
+	
+	
+	
 	exit(0);
 	
 }
